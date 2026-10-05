@@ -4,7 +4,7 @@ A real-time collaborative folder tree demo using [Articulated](https://github.co
 
 ## Architecture
 
-1. Clients send mutations to the server operations (e.g., "move File X to Folder A", "rename Folder B to 'C'")
+1. Clients send mutations to the server (e.g., "move File X to Folder A", "rename Folder B to 'C'")
 2. Server applies mutations in the order it receives them, establishing a global operation order
 3. Server broadcasts the mutations to all connected clients
 4. Clients rebase their pending local operations on top of the server state

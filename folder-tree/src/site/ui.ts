@@ -1,4 +1,4 @@
-import type { ElementId } from "articulated";
+import { equalsId } from "articulated";
 
 import { TreeClient } from "./tree_client";
 import type { TreeNode } from "../common/types";
@@ -91,10 +91,7 @@ export class TreeUi {
     // Render children if folder
     if (node.type === "folder") {
       const children = allNodes.filter(
-        ({ parentId }) =>
-          parentId &&
-          parentId.bunchId === node.id.bunchId &&
-          parentId.counter === node.id.counter
+        ({ parentId }) => parentId && equalsId(parentId, node.id)
       );
 
       if (children.length > 0) {
@@ -120,7 +117,7 @@ export class TreeUi {
     let index = 1;
     for (const folder of folders) {
       if (
-        this.isSameNode(folder.id, node.id) ||
+        equalsId(folder.id, node.id) ||
         this.isDescendant(folder, node, allNodes)
       ) {
         continue;
@@ -151,10 +148,6 @@ export class TreeUi {
     this.client.moveNode(node.id, newParentId);
   }
 
-  private isSameNode(id1: ElementId, id2: ElementId): boolean {
-    return id1.bunchId === id2.bunchId && id1.counter === id2.counter;
-  }
-
   private isDescendant(
     folder: TreeNode,
     node: TreeNode,
@@ -162,12 +155,10 @@ export class TreeUi {
   ): boolean {
     let current: TreeNode | undefined = folder;
     while (current && current.parentId) {
-      if (this.isSameNode(current.parentId, node.id)) {
+      if (equalsId(current.parentId, node.id)) {
         return true;
       }
-      current = allNodes.find(({ id }) =>
-        this.isSameNode(id, current!.parentId!)
-      );
+      current = allNodes.find(({ id }) => equalsId(id, current!.parentId!));
     }
     return false;
   }
@@ -177,9 +168,7 @@ export class TreeUi {
     let current: TreeNode | undefined = node;
     while (current && current.parentId) {
       depth++;
-      current = allNodes.find(({ id }) =>
-        this.isSameNode(id, current!.parentId!)
-      );
+      current = allNodes.find(({ id }) => equalsId(id, current!.parentId!));
     }
     return depth;
   }

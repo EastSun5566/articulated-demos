@@ -1,12 +1,8 @@
-import { ElementId, IdList, type SavedIdList } from "articulated";
+import { ElementId, equalsId, IdList, type SavedIdList } from "articulated";
 import type { TreeNode, TreeMutation } from "./types";
 
 function elementIdToString(id: ElementId) {
   return `${id.bunchId}:${id.counter}`;
-}
-
-function elementIdsEqual(a: ElementId, b: ElementId) {
-  return a.bunchId === b.bunchId && a.counter === b.counter;
 }
 
 export interface TreeStateData {
@@ -14,7 +10,15 @@ export interface TreeStateData {
   nodesJson: [string, TreeNode][];
 }
 
+/**
+ * Persistent tree state: apply never modifies this version. Successful updates
+ * return a new state; skipped operations return this state unchanged.
+ * Unchanged IdList structure and node objects are shared between versions.
+ */
 export class TreeState {
+  // One global list determines sibling order by filtering on parentId. Nodes
+  // from different parents may interleave; subtrees need not be contiguous.
+  // This avoids maintaining a separate IdList for every folder.
   private idList: IdList;
   private nodes: Map<string, TreeNode>; // key = elementIdToString(id)
 
@@ -141,7 +145,7 @@ export class TreeState {
   private isDescendant(descendantId: ElementId, ancestorId: ElementId) {
     let current = this.getNode(descendantId);
     while (current && current.parentId) {
-      if (elementIdsEqual(current.parentId, ancestorId)) return true;
+      if (equalsId(current.parentId, ancestorId)) return true;
       current = this.getNode(current.parentId);
     }
     return false;
