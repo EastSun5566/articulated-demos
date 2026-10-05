@@ -62,24 +62,7 @@ export class TreeState {
         const node = this.getNode(id);
         if (!node) return this;
 
-        // if folder, delete all children recursively
-        if (node.type === "folder") {
-          const children = this.getChildren(id);
-          for (const child of children) {
-            const childMutation: TreeMutation = {
-              type: "deleteNode",
-              id: child.id,
-            };
-            const tempState = new TreeState(newIdList, newNodes).apply(
-              childMutation
-            );
-            newIdList = tempState.idList;
-            tempState.nodes.forEach((v, k) => newNodes.set(k, v));
-          }
-        }
-
-        newIdList = newIdList.delete(id);
-        newNodes.delete(elementIdToString(id));
+        newIdList = deleteSubtree(newIdList, newNodes, node);
 
         return new TreeState(newIdList, newNodes);
       }
@@ -107,7 +90,7 @@ export class TreeState {
           }
 
           // Prevent moving to its own descendant (which would cause a cycle)
-          if (this.isDescendant(newParentId, id)) {
+          if (equalsId(newParentId, id) || this.isDescendant(newParentId, id)) {
             console.warn("Cannot move to descendant, skipping move");
             return this;
           }
@@ -163,4 +146,21 @@ export class TreeState {
     const nodes = new Map<string, TreeNode>(data.nodesJson);
     return new TreeState(idList, nodes);
   }
+}
+
+/** Deletes into a single Map copy, retaining the IDs as tombstones. */
+function deleteSubtree(
+  idList: IdList,
+  nodes: Map<string, TreeNode>,
+  node: TreeNode
+): IdList {
+  if (node.type === "folder") {
+    for (const child of nodes.values()) {
+      if (child.parentId !== null && equalsId(child.parentId, node.id)) {
+        idList = deleteSubtree(idList, nodes, child);
+      }
+    }
+  }
+  nodes.delete(elementIdToString(node.id));
+  return idList.delete(node.id);
 }

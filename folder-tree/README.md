@@ -18,6 +18,7 @@ The demo uses **Last Write Wins** semantics for conflicts:
 - **Concurrent moves**: If two clients move the same node to different parents while offline, the last operation to reach the server wins
 - **Move to deleted parent**: If a client tries to move a node to a parent that has been deleted, the operation is skipped
 - **Cycle prevention**: If a move would create a cycle (e.g., moving A to B while B is being moved to A), the second operation is rejected
+- **Subtree deletion**: Deleting a folder deletes all of its descendants at the time the operation is applied, retaining their IDs as tombstones
 
 ## Code Organization
 
