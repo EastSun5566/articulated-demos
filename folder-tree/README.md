@@ -4,21 +4,30 @@ A real-time collaborative folder tree demo using [Articulated](https://github.co
 
 ## Architecture
 
-1. Clients send mutations to the server (e.g., "move File X to Folder A", "rename Folder B to 'C'")
+1. Clients send mutations to the server (e.g., "move File X to Folder A after File Y", "rename Folder B to 'C'")
 2. Server applies mutations in the order it receives them, establishing a global operation order
 3. Server broadcasts the mutations to all connected clients
 4. Clients rebase their pending local operations on top of the server state
 
 The `articulated` library is used to maintain stable identifiers for tree nodes: each node is assigned an `ElementId`. This allows operations to reference nodes by their stable IDs rather than by their position in the tree, which may change as other operations are applied.
 
+### Moving and Reordering
+
+Choose a destination folder (or Root), then choose the first position or a sibling to place the node after. The position prompt defaults to the last sibling. You can select the current parent to reorder its children.
+
+The client API is `moveNode(id, newParentId, newAfterSiblingId)`. `newAfterSiblingId = null` places the node first; otherwise it references a visible sibling in the destination parent. The move changes both the parent and the global list position, preserving the node's ID and its descendants' relationships and order.
+
 ### Conflict Resolution
 
-The demo uses **Last Write Wins** semantics for conflicts:
+The server processes operations in the order it receives them, validating each against the current tree:
 
-- **Concurrent moves**: If two clients move the same node to different parents while offline, the last operation to reach the server wins
+- **Concurrent moves**: If two clients move the same node, the last valid operation to reach the server determines its parent and position
 - **Move to deleted parent**: If a client tries to move a node to a parent that has been deleted, the operation is skipped
+- **Unavailable sibling**: If the specified sibling has been deleted, moved to another parent, or never created successfully, the entire move is skipped
 - **Cycle prevention**: If a move would create a cycle (e.g., moving A to B while B is being moved to A), the second operation is rejected
 - **Subtree deletion**: Deleting a folder deletes all of its descendants at the time the operation is applied, retaining their IDs as tombstones
+
+Skipped operations are still broadcast and acknowledged, so clients remove them from their pending queues.
 
 ## Code Organization
 

@@ -77,9 +77,9 @@ export class TreeState {
       }
 
       case "moveNode": {
-        const { id, newParentId } = mutation;
+        const { id, newParentId, newAfterSiblingId } = mutation;
         const node = this.getNode(id);
-        if (!node) return this;
+        if (!node || !this.idList.has(id)) return this;
 
         // check new parent validity
         if (newParentId !== null) {
@@ -96,6 +96,27 @@ export class TreeState {
           }
         }
 
+        if (newAfterSiblingId !== null) {
+          const sibling = this.getNode(newAfterSiblingId);
+          if (
+            !sibling ||
+            !this.idList.has(newAfterSiblingId) ||
+            equalsId(newAfterSiblingId, id) ||
+            (newParentId === null
+              ? sibling.parentId !== null
+              : sibling.parentId === null ||
+                !equalsId(sibling.parentId, newParentId))
+          ) {
+            console.warn(
+              "Sibling not found or not in target parent, skipping move"
+            );
+            return this;
+          }
+        }
+
+        // Reposition the existing ID within this operation. No intermediate
+        // state escapes, and future operations can still reference the same ID.
+        newIdList = newIdList.uninsert(id).insertAfter(newAfterSiblingId, id);
         newNodes.set(elementIdToString(id), { ...node, parentId: newParentId });
 
         return new TreeState(newIdList, newNodes);

@@ -136,7 +136,11 @@ export class TreeClient {
     this.mutate({ type: "renameNode", id, newName });
   }
 
-  moveNode(id: ElementId, newParentId: ElementId | null) {
-    this.mutate({ type: "moveNode", id, newParentId });
+  moveNode(
+    id: ElementId,
+    newParentId: ElementId | null,
+    newAfterSiblingId: ElementId | null
+  ) {
+    this.mutate({ type: "moveNode", id, newParentId, newAfterSiblingId });
   }
 }

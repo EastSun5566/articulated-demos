@@ -136,8 +136,12 @@ export class TreeUi {
     const input = prompt(message);
     if (input === null) return;
 
-    const selectedIndex = parseInt(input);
-    if (isNaN(selectedIndex) || !folderMap.has(selectedIndex)) {
+    const selectedIndex = Number(input);
+    if (
+      input.trim() === "" ||
+      !Number.isInteger(selectedIndex) ||
+      !folderMap.has(selectedIndex)
+    ) {
       alert("Invalid selection");
       return;
     }
@@ -145,7 +149,40 @@ export class TreeUi {
     const targetFolder = folderMap.get(selectedIndex);
     const newParentId = targetFolder ? targetFolder.id : null;
 
-    this.client.moveNode(node.id, newParentId);
+    const siblings = allNodes.filter(
+      ({ id, parentId }) =>
+        !equalsId(id, node.id) &&
+        (newParentId === null
+          ? parentId === null
+          : parentId !== null && equalsId(parentId, newParentId))
+    );
+    const positions = [
+      "First",
+      ...siblings.map((sibling) => `After "${sibling.name}"`),
+    ];
+    const positionInput = prompt(
+      `Place "${node.name}":\n\n${positions
+        .map((position, i) => `${i}. ${position}`)
+        .join("\n")}\n\nEnter number:`,
+      String(siblings.length)
+    );
+    if (positionInput === null) return;
+    const positionIndex = Number(positionInput);
+    if (
+      positionInput.trim() === "" ||
+      !Number.isInteger(positionIndex) ||
+      positionIndex < 0 ||
+      positionIndex >= positions.length
+    ) {
+      alert("Invalid selection");
+      return;
+    }
+
+    this.client.moveNode(
+      node.id,
+      newParentId,
+      positionIndex === 0 ? null : siblings[positionIndex - 1].id
+    );
   }
 
   private isDescendant(

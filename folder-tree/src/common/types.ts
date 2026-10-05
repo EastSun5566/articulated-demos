@@ -30,6 +30,8 @@ export type TreeMutation =
       type: "moveNode";
       id: ElementId;
       newParentId: ElementId | null;
+      /** null places the node first among its new siblings. */
+      newAfterSiblingId: ElementId | null;
     };
 
 export interface ClientMutation {
